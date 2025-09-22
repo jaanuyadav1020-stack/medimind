@@ -39,8 +39,10 @@ self.addEventListener('notificationclick', event => {
       self.registration.showNotification(`Snoozed: ${reminder.medicineName}`, {
         body: `It's time to take your medication.`,
         icon: '/vite.svg',
+        image: reminder.imageUrl, // Display the medicine image on snoozed notifications
         tag: reminder.id + '-snoozed-' + Date.now(), // Unique tag for snoozed notification
         requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 200], // Also vibrate for snoozed notifications
         data: { reminder }, // Pass the original reminder data again for re-snoozing
         actions: [
           { action: 'snooze-5', title: 'Snooze 5 min' },

@@ -18,6 +18,14 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onload = () => resolve((reader.result as string).split(',')[1]);
     reader.onerror = error => reject(error);
   });
+  
+const fileToDataURL = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 
 
 const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveReminder, reminderToEdit }) => {
@@ -28,6 +36,8 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageBase64Url, setImageBase64Url] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = !!reminderToEdit;
@@ -38,8 +48,14 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
       setTimeSlot(reminderToEdit.timeSlot);
       setTime(reminderToEdit.time);
       setDays(reminderToEdit.days);
-      setImagePreviewUrl(null); // No image preview in edit mode
       setError('');
+      if (reminderToEdit.imageUrl) {
+        setImagePreviewUrl(reminderToEdit.imageUrl);
+        setImageBase64Url(reminderToEdit.imageUrl);
+      } else {
+        setImagePreviewUrl(null);
+        setImageBase64Url(null);
+      }
     }
   }, [reminderToEdit]);
 
@@ -47,7 +63,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
   useEffect(() => {
     // Clean up the object URL to avoid memory leaks
     return () => {
-      if (imagePreviewUrl) {
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreviewUrl);
       }
     };
@@ -60,11 +76,12 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
   };
 
   const clearImage = () => {
-    if (imagePreviewUrl) {
+    if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreviewUrl);
     }
     setImagePreviewUrl(null);
-    setMedicineName(isEditMode ? medicineName : ''); // Don't clear name in edit mode unless new image is uploaded
+    setImageBase64Url(null);
+    setMedicineName(isEditMode && reminderToEdit?.medicineName ? reminderToEdit.medicineName : ''); 
     setError('');
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -75,7 +92,10 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Create a URL for the new image and set it for preview
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      
       const newPreviewUrl = URL.createObjectURL(file);
       setImagePreviewUrl(newPreviewUrl);
 
@@ -84,7 +104,9 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
       setMedicineName('');
       
       try {
-        const base64Image = await fileToBase64(file);
+        const dataUrl = await fileToDataURL(file);
+        setImageBase64Url(dataUrl);
+        const base64Image = dataUrl.split(',')[1];
         const extractedName = await extractTextFromImage(base64Image, file.type);
         setMedicineName(extractedName);
       } catch (err) {
@@ -101,7 +123,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveRemi
       setError('Please fill in the medicine name and select at least one day.');
       return;
     }
-    const reminderData = { medicineName, timeSlot, time, days };
+    const reminderData = { medicineName, timeSlot, time, days, imageUrl: imageBase64Url };
     
     if (isEditMode) {
       onSaveReminder({ ...reminderData, id: reminderToEdit.id });

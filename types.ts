@@ -21,4 +21,5 @@ export interface Reminder {
   timeSlot: TimeSlot;
   time: string; // HH:mm format
   days: Day[];
+  imageUrl?: string; // To store a data URL of the medicine's image
 }

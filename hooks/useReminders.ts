@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Reminder, Day } from '../types';
-import { DAYS_OF_WEEK } from '../constants';
+import { DAYS_OF_WEEK, ALARM_SOUND_B64 } from '../constants';
 
 // Helper function for safer date initialization from localStorage
 const getInitialLastCheck = (): Date => {
@@ -79,33 +79,32 @@ export const useReminders = () => {
 
         // Check if the reminder time falls within our check window (startTime to now).
         if (reminderDateTime > startTime && reminderDateTime <= now) {
-           if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(registration => {
-              // FIX: Cast notification options to 'any' to resolve a TypeScript error.
-              // The 'actions' property is valid for service worker notifications but may
-              // be missing from the NotificationOptions type in this project's configuration.
-              registration.showNotification(`Time for your: ${reminder.medicineName}`, {
-                body: `It's your scheduled time (${reminder.time}) to take your medication.`,
+           if (Notification.permission === 'granted') {
+             const notificationOptions: any = {
+                body: `It's ${reminder.time}. Time to take your ${reminder.medicineName}.`,
                 icon: '/vite.svg',
-                tag: reminder.id, // Use a tag to prevent duplicate notifications
-                requireInteraction: true, // Keep notification until user interaction
-                data: { reminder }, // Pass the full reminder object to the SW
+                image: reminder.imageUrl,
+                tag: reminder.id, 
+                requireInteraction: true,
+                sound: ALARM_SOUND_B64,
+                vibrate: [200, 100, 200, 100, 200],
+                data: { reminder },
                 actions: [
                   { action: 'snooze-5', title: 'Snooze 5 min' },
                   { action: 'snooze-15', title: 'Snooze 15 min' },
                   { action: 'snooze-30', title: 'Snooze 30 min' },
                 ]
-              } as any);
-            });
-          } else if (Notification.permission === 'granted') {
-            // Fallback for browsers without service worker support
-            new Notification(`Time for your: ${reminder.medicineName}`, {
-              body: `It's your scheduled time (${reminder.time}) to take your medication.`,
-              icon: '/vite.svg',
-              tag: reminder.id,
-              requireInteraction: true,
-            });
-          }
+              };
+               
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.showNotification(`Time for: ${reminder.medicineName}`, notificationOptions);
+                });
+            } else {
+                // Fallback for browsers without service worker support (actions might not work)
+                new Notification(`Time for: ${reminder.medicineName}`, notificationOptions);
+            }
+           }
         }
       }
     });
