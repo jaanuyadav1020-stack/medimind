@@ -1,0 +1,7 @@
+{
+  "name": "MediMind: Smart Medication Reminders",
+  "description": "A smart medication reminder application that helps users track their medication schedules. Users can add reminders by typing the medicine name, or by simply uploading a photo to have the app automatically identify it using AI. Set specific times and days to receive timely notifications and never miss a dose again.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
