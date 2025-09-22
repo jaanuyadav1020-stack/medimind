@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Reminder } from '../types';
 import ReminderItem from './ReminderItem';
@@ -7,9 +6,10 @@ import { CalendarIcon } from './icons/Icons';
 interface ReminderListProps {
   reminders: Reminder[];
   onDelete: (id: string) => void;
+  onEdit: (reminder: Reminder) => void;
 }
 
-const ReminderList: React.FC<ReminderListProps> = ({ reminders, onDelete }) => {
+const ReminderList: React.FC<ReminderListProps> = ({ reminders, onDelete, onEdit }) => {
   if (reminders.length === 0) {
     return (
       <div className="text-center py-20 px-4">
@@ -27,7 +27,7 @@ const ReminderList: React.FC<ReminderListProps> = ({ reminders, onDelete }) => {
   return (
     <div className="space-y-4">
       {reminders.map(reminder => (
-        <ReminderItem key={reminder.id} reminder={reminder} onDelete={onDelete} />
+        <ReminderItem key={reminder.id} reminder={reminder} onDelete={onDelete} onEdit={onEdit} />
       ))}
     </div>
   );

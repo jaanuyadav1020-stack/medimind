@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useReminders } from '../hooks/useReminders';
 import AddReminderModal from '../components/AddReminderModal';
 import ReminderList from '../components/ReminderList';
 import { PlusIcon, UserCircleIcon, LogoutIcon, BellIcon, PillIcon } from '../components/icons/Icons';
+import { Reminder } from '../types';
 
 interface HomePageProps {
   user: { email: string };
@@ -11,8 +11,9 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
-  const { reminders, addReminder, deleteReminder } = useReminders();
+  const { reminders, addReminder, deleteReminder, updateReminder } = useReminders();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
 
   useEffect(() => {
@@ -26,6 +27,30 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
       Notification.requestPermission().then(setNotificationPermission);
     }
   }
+  
+  const handleEdit = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setIsModalOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingReminder(null);
+    setIsModalOpen(true);
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingReminder(null);
+  };
+
+  const handleSaveReminder = (reminderData: Omit<Reminder, 'id'> | Reminder) => {
+    if ('id' in reminderData) {
+      updateReminder(reminderData as Reminder);
+    } else {
+      addReminder(reminderData);
+    }
+    handleCloseModal();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,10 +93,10 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
           </div>
         )}
 
-        <ReminderList reminders={reminders} onDelete={deleteReminder} />
+        <ReminderList reminders={reminders} onDelete={deleteReminder} onEdit={handleEdit} />
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddNew}
           className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-110"
           aria-label="Add new reminder"
         >
@@ -81,8 +106,9 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
 
       {isModalOpen && (
         <AddReminderModal
-          onClose={() => setIsModalOpen(false)}
-          onAddReminder={addReminder}
+          onClose={handleCloseModal}
+          onSaveReminder={handleSaveReminder}
+          reminderToEdit={editingReminder}
         />
       )}
     </div>

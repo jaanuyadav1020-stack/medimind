@@ -7,7 +7,8 @@ import { XIcon, PhotographIcon, SparklesIcon, ClockIcon, CalendarIcon, PillIcon 
 
 interface AddReminderModalProps {
   onClose: () => void;
-  onAddReminder: (reminder: Omit<Reminder, 'id'>) => void;
+  onSaveReminder: (reminder: Omit<Reminder, 'id'> | Reminder) => void;
+  reminderToEdit?: Reminder | null;
 }
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -19,7 +20,7 @@ const fileToBase64 = (file: File): Promise<string> =>
   });
 
 
-const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddReminder }) => {
+const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onSaveReminder, reminderToEdit }) => {
   const [medicineName, setMedicineName] = useState('');
   const [timeSlot, setTimeSlot] = useState<TimeSlot>(TimeSlot.Morning);
   const [time, setTime] = useState('08:00');
@@ -28,6 +29,20 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddRemin
   const [error, setError] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditMode = !!reminderToEdit;
+
+  useEffect(() => {
+    if (reminderToEdit) {
+      setMedicineName(reminderToEdit.medicineName);
+      setTimeSlot(reminderToEdit.timeSlot);
+      setTime(reminderToEdit.time);
+      setDays(reminderToEdit.days);
+      setImagePreviewUrl(null); // No image preview in edit mode
+      setError('');
+    }
+  }, [reminderToEdit]);
+
 
   useEffect(() => {
     // Clean up the object URL to avoid memory leaks
@@ -49,7 +64,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddRemin
       URL.revokeObjectURL(imagePreviewUrl);
     }
     setImagePreviewUrl(null);
-    setMedicineName('');
+    setMedicineName(isEditMode ? medicineName : ''); // Don't clear name in edit mode unless new image is uploaded
     setError('');
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -86,7 +101,13 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddRemin
       setError('Please fill in the medicine name and select at least one day.');
       return;
     }
-    onAddReminder({ medicineName, timeSlot, time, days });
+    const reminderData = { medicineName, timeSlot, time, days };
+    
+    if (isEditMode) {
+      onSaveReminder({ ...reminderData, id: reminderToEdit.id });
+    } else {
+      onSaveReminder(reminderData);
+    }
     onClose();
   };
 
@@ -98,7 +119,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddRemin
         </button>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800">New Reminder</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{isEditMode ? 'Edit Reminder' : 'New Reminder'}</h2>
           
           <div>
             <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2"><PillIcon className="w-5 h-5 text-gray-500" />Medicine Name</label>
@@ -199,7 +220,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({ onClose, onAddRemin
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
-              Add Reminder
+              {isEditMode ? 'Save Changes' : 'Add Reminder'}
             </button>
           </div>
         </form>

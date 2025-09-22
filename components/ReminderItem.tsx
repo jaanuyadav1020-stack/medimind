@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Reminder, Day, TimeSlot } from '../types';
-import { TrashIcon, ClockIcon, SunIcon, MoonIcon } from './icons/Icons';
+import { TrashIcon, ClockIcon, SunIcon, MoonIcon, PencilIcon } from './icons/Icons';
 import { DAYS_OF_WEEK } from '../constants';
 
 interface ReminderItemProps {
   reminder: Reminder;
   onDelete: (id: string) => void;
+  onEdit: (reminder: Reminder) => void;
 }
 
 const TimeSlotIcon = ({ timeSlot }: { timeSlot: TimeSlot }) => {
@@ -21,7 +21,7 @@ const TimeSlotIcon = ({ timeSlot }: { timeSlot: TimeSlot }) => {
     }
 };
 
-const ReminderItem: React.FC<ReminderItemProps> = ({ reminder, onDelete }) => {
+const ReminderItem: React.FC<ReminderItemProps> = ({ reminder, onDelete, onEdit }) => {
   return (
     <div className="bg-white rounded-xl shadow-md p-5 flex items-start space-x-4 transition-all hover:shadow-lg">
       <div className="flex-shrink-0 p-3 bg-blue-100 rounded-full">
@@ -49,13 +49,22 @@ const ReminderItem: React.FC<ReminderItemProps> = ({ reminder, onDelete }) => {
           ))}
         </div>
       </div>
-       <button
-        onClick={() => onDelete(reminder.id)}
-        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded-full transition"
-        aria-label="Delete reminder"
-       >
-        <TrashIcon className="w-5 h-5" />
-      </button>
+       <div className="flex items-center">
+         <button
+          onClick={() => onEdit(reminder)}
+          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-100 rounded-full transition"
+          aria-label="Edit reminder"
+         >
+          <PencilIcon className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => onDelete(reminder.id)}
+          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded-full transition"
+          aria-label="Delete reminder"
+        >
+          <TrashIcon className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 };
